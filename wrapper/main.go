@@ -73,7 +73,16 @@ func hideConsole() {
 }
 
 func resolveTarget(target string) string {
-	p := filepath.Join(filepath.Dir(target), "java.exe")
+	base := strings.ToLower(filepath.Base(target))
+	dir := filepath.Dir(target)
+
+	// stalcraftw.exe -> javaw.exe, stalcraft.exe -> java.exe
+	javaExe := "java.exe"
+	if base == "stalcraftw.exe" {
+		javaExe = "javaw.exe"
+	}
+
+	p := filepath.Join(dir, javaExe)
 	if _, err := os.Stat(p); err == nil {
 		return p
 	}
