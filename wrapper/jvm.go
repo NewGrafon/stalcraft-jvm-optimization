@@ -68,11 +68,15 @@ func calcHeap(sys SystemInfo) uint64 {
 	free := bytesToGB(sys.FreeRAM)
 	total := bytesToGB(sys.TotalRAM)
 
+	if total <= 8 {
+		return 0
+	}
+
 	heap := free / 2
 
 	floor := total / 4
-	if floor < 2 {
-		floor = 2
+	if floor < 6 {
+		floor = 6
 	}
 	cap := total * 3 / 4
 	if cap > 16 {
@@ -85,8 +89,8 @@ func calcHeap(sys SystemInfo) uint64 {
 	if heap > cap {
 		heap = cap
 	}
-	if heap < 2 {
-		heap = 2
+	if heap < 6 {
+		heap = 6
 	}
 	return heap
 }

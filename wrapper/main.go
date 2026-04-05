@@ -159,7 +159,13 @@ func boostProcess(pid uint32) {
 func run() int {
 	target := resolveTarget(os.Args[1])
 	sys := detectSystem()
-	args := filterArgs(os.Args[2:], generateFlags(sys))
+
+	var args []string
+	if calcHeap(sys) == 0 {
+		args = os.Args[2:]
+	} else {
+		args = filterArgs(os.Args[2:], generateFlags(sys))
+	}
 
 	cmd := exec.Command(target, args...)
 	cmd.Stdin = os.Stdin
