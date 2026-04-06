@@ -90,7 +90,13 @@ func createEnvBlock() []uint16 {
 func buildCmdLine(exe string, args []string) string {
 	parts := make([]string, 0, 1+len(args))
 	parts = append(parts, `"`+exe+`"`)
-	parts = append(parts, args...)
+	for _, a := range args {
+		if strings.ContainsAny(a, ` "`) {
+			parts = append(parts, `"`+a+`"`)
+		} else {
+			parts = append(parts, a)
+		}
+	}
 	return strings.Join(parts, " ")
 }
 
@@ -113,6 +119,7 @@ func ntCreateProcess(exePath string, args []string) (hProcess, hThread syscall.H
 	if workDir == "" {
 		workDir = filepath.Dir(absPath)
 	}
+	workDir, _ = filepath.Abs(workDir)
 
 	imgUS, imgBuf := newUnicodeString(absPath)
 	cmdUS, cmdBuf := newUnicodeString(cmdLine)

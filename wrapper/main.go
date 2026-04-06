@@ -172,6 +172,7 @@ func filterArgs(orig, injected []string) []string {
 	return append(result, app...)
 }
 
+
 func run() int {
 	sys := detectSystem()
 

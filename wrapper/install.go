@@ -31,7 +31,7 @@ func install() {
 			os.Exit(1)
 		}
 
-		if err := key.SetStringValue("Debugger", self); err != nil {
+		if err := key.SetStringValue("Debugger", `"`+self+`"`); err != nil {
 			key.Close()
 			fmt.Fprintf(os.Stderr, "[install] Failed to set Debugger value for %s: %v\n", target, err)
 			os.Exit(1)

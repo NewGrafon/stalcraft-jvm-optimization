@@ -72,25 +72,18 @@ func calcHeap(sys SystemInfo) uint64 {
 		return 0
 	}
 
+	// Need at least 6GB free to inject flags, otherwise don't touch anything
+	if free < 6 {
+		return 0
+	}
+
 	heap := free / 2
 
-	floor := total / 4
-	if floor < 6 {
-		floor = 6
-	}
-	cap := total * 3 / 4
-	if cap > 16 {
-		cap = 16
-	}
-
-	if heap < floor {
-		heap = floor
-	}
-	if heap > cap {
-		heap = cap
-	}
 	if heap < 6 {
 		heap = 6
+	}
+	if heap > 8 {
+		heap = 8
 	}
 	return heap
 }
