@@ -4,6 +4,8 @@
 [![Downloads](https://img.shields.io/github/downloads/SilentBless/stalcraft-jvm-optimization/total?label=Downloads&color=green)](../../releases)
 [![Latest Release](https://img.shields.io/github/v/release/SilentBless/stalcraft-jvm-optimization?label=Latest)](../../releases/latest)
 
+> **Дисклеймер:** Это **неофициальный** проект, созданный автором [SilentBless](https://github.com/SilentBless), благодарим его за работу над проектом. Проект **не поддерживается и не аффилирован с EXBO**, но был официально проверен на предмет безопасности для вашего ПК.
+
 JVM-враппер для STALCRAFT. Автоматически оптимизирует настройки Java под ваше железо для лучшей производительности.
 
 > **Важно:** На системах с 8 ГБ оперативной памяти и менее враппер не инжектирует флаги — стандартных настроек лаунчера достаточно, а агрессивная оптимизация на малом объёме памяти может навредить.
