@@ -68,7 +68,6 @@ var prefixRemove = []string{
 	"-XX:ThreadPriorityPolicy=",
 	"-XX:CompileThresholdScaling=",
 	"-Dsun.reflect.inflationThreshold=",
-	"-Xlog:",
 	"-Xms",
 	"-Xmx",
 }

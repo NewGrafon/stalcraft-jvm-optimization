@@ -10,14 +10,7 @@ import (
 )
 
 // Flags renders the tuning profile as a list of -X / -XX: flags.
-//
-// jvmLogPath is the path passed to -Xlog file= when EnableJVMLog is set.
-// It is interpreted by the JVM relative to its working directory (the
-// game directory), so the caller is responsible for computing whatever
-// relative path lands the file where the wrapper wants it. An empty
-// string falls back to the default "logs/jvm.log" sibling of the game
-// working directory.
-func Flags(cfg config.Config, jvmLogPath string) []string {
+func Flags(cfg config.Config) []string {
 	cc := cfg.ReservedCodeCacheSizeMB
 	if cc == 0 {
 		cc = 256
@@ -145,40 +138,6 @@ func Flags(cfg config.Config, jvmLogPath string) []string {
 	}
 	if cfg.CompileThresholdScaling > 0 && cfg.CompileThresholdScaling != 1.0 {
 		flags = append(flags, fmt.Sprintf("-XX:CompileThresholdScaling=%g", cfg.CompileThresholdScaling))
-	}
-
-	// Unified logging (JEP 158, JDK 9+). We deliberately enable only
-	// the two tag selectors that have existed since the first JEP 158
-	// implementation in OpenJDK 9:
-	//
-	//   gc*       — every GC-prefixed tag (gc, gc+heap, gc+phases,
-	//               gc+ergo, gc+humongous, …) — covers all GC events
-	//   safepoint — every STW pause, GC and non-GC alike (deopt,
-	//               class redefinition, thread dump, ForceSafepoint…)
-	//
-	// Tags like `jit+compilation`, `deoptimization`, `metaspace` and
-	// `codecache` are only available in JDK 11+. OpenJDK 9 does not
-	// silently ignore unknown tag selectors — it aborts JVM startup
-	// with "Could not create the Java Virtual Machine", which broke
-	// the wrapper for STALCRAFT users on the bundled JDK 9 runtime.
-	// The two tags above are enough to surface every STW microfreeze,
-	// which was the original goal of enabling JVM logging at all.
-	//
-	// The path is intentionally relative: -Xlog uses ':' as a section
-	// separator and a Windows absolute path "C:\..." collides with the
-	// parser. The caller computes a relative path from the game's
-	// working directory to wherever it wants the log to land (typically
-	// jvm_wrapper/logs/jvm.log via filepath.Rel) and passes it in.
-	// Overhead of unified logging itself is below 0.1 %.
-	if cfg.EnableJVMLog {
-		path := jvmLogPath
-		if path == "" {
-			path = "logs/jvm.log"
-		}
-		flags = append(flags, fmt.Sprintf(
-			"-Xlog:gc*,safepoint:file=%s:time,uptime,level,tags:filecount=3,filesize=10M",
-			path,
-		))
 	}
 
 	return flags

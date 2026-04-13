@@ -105,7 +105,6 @@ func Generate(sys sysinfo.Info) Config {
 		ThreadPriorityPolicy:         1,
 		UseCounterDecay:              false,
 		CompileThresholdScaling:      0.5,
-		EnableJVMLog:                 true,
 	}
 }
 

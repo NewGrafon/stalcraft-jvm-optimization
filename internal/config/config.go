@@ -75,12 +75,6 @@ type Config struct {
 	ThreadPriorityPolicy         int     `json:"thread_priority_policy"`
 	UseCounterDecay              bool    `json:"use_counter_decay"`
 	CompileThresholdScaling      float64 `json:"compile_threshold_scaling"`
-
-	// EnableJVMLog turns on JDK 9 unified logging for GC, safepoints,
-	// JIT compilation, deoptimization, metaspace and code cache
-	// events. Output goes to logs/jvm.log in the game directory with
-	// 3 rotated files × 10 MB each. Performance impact <0.1%.
-	EnableJVMLog bool `json:"enable_jvm_log"`
 }
 
 // Dir returns the configs directory next to the executable.

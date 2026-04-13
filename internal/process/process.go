@@ -139,12 +139,11 @@ func extractGameDir(exePath string, args []string) string {
 	return ""
 }
 
-// WorkDir returns the absolute working directory that Start would use
-// for the spawned game process: an explicit --gameDir / -Djava.library.path
-// value when present, or the directory containing the target executable
-// as a fallback. Exposed so the wrapper can resolve other paths
-// (such as the JVM unified-log file) relative to it before launch.
-func WorkDir(exePath string, args []string) string {
+// resolveWorkDir returns the absolute working directory for the spawned
+// game process: an explicit --gameDir / -Djava.library.path value when
+// present, or the directory containing the target executable as a
+// fallback.
+func resolveWorkDir(exePath string, args []string) string {
 	abs, err := filepath.Abs(exePath)
 	if err != nil {
 		abs = exePath
@@ -169,7 +168,7 @@ func Start(exePath string, args []string) (*Process, error) {
 	ntPath := `\??\` + absPath
 	cmdLine := buildCmdLine(absPath, args)
 
-	workDir := WorkDir(exePath, args)
+	workDir := resolveWorkDir(exePath, args)
 
 	imgUS, imgBuf, err := newUnicodeString(absPath)
 	if err != nil {

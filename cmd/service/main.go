@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/EXBO-Community/stalcraft-jvm-optimization/internal/config"
@@ -61,8 +60,6 @@ func launch(exePath string, args []string) int {
 		fmt.Fprintf(os.Stderr, "[config] %v\n", err)
 	}
 
-	jvmLogPath := resolveJVMLogPath(exePath, args)
-
 	cfg, cfgErr := config.LoadActive()
 	switch {
 	case cfgErr != nil:
@@ -70,7 +67,7 @@ func launch(exePath string, args []string) int {
 	case cfg.HeapSizeGB == 0:
 		slog.Warn("config has zero heap, skipping flag injection", "name", config.ActiveName())
 	default:
-		flags := jvm.Flags(cfg, jvmLogPath)
+		flags := jvm.Flags(cfg)
 		slog.Info("config loaded",
 			"name", config.ActiveName(),
 			"heap_gb", cfg.HeapSizeGB,
@@ -82,7 +79,6 @@ func launch(exePath string, args []string) int {
 			"ihop", cfg.InitiatingHeapOccupancyPercent,
 			"large_pages", cfg.UseLargePages,
 			"flags_count", len(flags),
-			"jvm_log_path", jvmLogPath,
 		)
 		args = jvm.FilterArgs(args, flags)
 	}
@@ -116,40 +112,4 @@ func launch(exePath string, args []string) int {
 	}
 	slog.Info("service exit", "code", code, "wait_ms", waitMs)
 	return code
-}
-
-// resolveJVMLogPath builds a path to jvm_wrapper/logs/jvm.log expressed
-// relative to the game's working directory, so the JVM's -Xlog file=
-// argument (which cannot contain a colon and therefore cannot be an
-// absolute Windows path) lands the log file next to wrapper.log.
-//
-// The function silently falls back to "logs/jvm.log" — relative to the
-// game directory — when anything goes wrong (executable resolution
-// fails, the wrapper logs directory cannot be created, the game and
-// wrapper live on different volumes so filepath.Rel is impossible).
-// The fallback keeps logging working at the cost of a less convenient
-// log location.
-func resolveJVMLogPath(exePath string, args []string) string {
-	const fallback = "logs/jvm.log"
-
-	self, err := os.Executable()
-	if err != nil {
-		return fallback
-	}
-	wrapperLogsDir := filepath.Join(filepath.Dir(self), "logs")
-	if err := os.MkdirAll(wrapperLogsDir, 0o755); err != nil {
-		slog.Warn("create wrapper logs dir failed", "err", err)
-		return fallback
-	}
-
-	gameWorkDir := process.WorkDir(exePath, args)
-	rel, err := filepath.Rel(gameWorkDir, filepath.Join(wrapperLogsDir, "jvm.log"))
-	if err != nil {
-		slog.Warn("relative jvm.log path unavailable, falling back to game dir",
-			"game_dir", logging.RedactPath(gameWorkDir),
-			"err", err,
-		)
-		return fallback
-	}
-	return filepath.ToSlash(rel)
 }
