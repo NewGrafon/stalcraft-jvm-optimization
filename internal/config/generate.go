@@ -15,7 +15,7 @@ import "github.com/EXBO-Community/stalcraft-jvm-optimization/internal/sysinfo"
 // Everything else is a fixed, tested default compatible with OpenJDK 9.
 func Generate(sys sysinfo.Info) Config {
 	heap := sizeHeap(sys.TotalGB())
-	parallel, concurrent := gcThreads(sys.CPUCores)
+	parallel, concurrent := gcThreads(sys.CPUThreads)
 	jit := jitProfile(sys)
 
 	// Throughput-first defaults for mainstream CPUs. A loose 50 ms
@@ -153,20 +153,27 @@ func sizeHeap(totalGB uint64) uint64 {
 }
 
 // gcThreads derives the STW and concurrent GC worker counts from the
-// physical core count, assuming 2-way SMT (every modern consumer CPU).
+// total logical thread count reported by the OS (runtime.NumCPU).
 //
 // Parallel workers only run during STW — the game thread is stopped
-// anyway, so HT siblings are free to do GC work without contention.
-// That's why we scale off total logical threads (cores × 2), not just
-// physical cores, and cap at 10 where G1 hits diminishing returns.
+// anyway, so HT/SMT siblings are free to do GC work without any
+// contention. We scale parallel as "threads − 2" (leaving two threads
+// to the OS and background services even during STW) and cap at 10
+// where G1 hits diminishing returns on consumer hardware.
 //
 // Concurrent workers share CPU with the running game, so they stay
 // a bit more conservative: roughly half of parallel, floor 1, ceiling 5.
-// The ceiling was bumped from 4 to 5 after a 9900KF benchmark showed
-// that 5 concurrent workers (matching the hand-tuned max.json preset)
-// materially outperformed 4 under sustained allocation pressure.
-func gcThreads(cores int) (parallel, concurrent int) {
-	parallel = clamp(cores*2-2, 2, 10)
+// A 9900KF benchmark showed that 5 concurrent workers (matching the
+// hand-tuned max.json preset) materially outperformed 4 under
+// sustained allocation pressure, hence the bump from 4 to 5.
+//
+// Using logical threads (runtime.NumCPU) instead of physical_cores×2
+// is essential for correctness on CPUs without SMT/HT: an Intel
+// i5-9600KF is 6C/6T, not 6C/12T, and feeding 10 parallel workers to
+// a 6-thread CPU oversubscribes it by 1.67× — context switching
+// overhead wipes out the throughput gain from extra workers.
+func gcThreads(threads int) (parallel, concurrent int) {
+	parallel = clamp(threads-2, 2, 10)
 	concurrent = clamp(parallel/2, 1, 5)
 	return
 }

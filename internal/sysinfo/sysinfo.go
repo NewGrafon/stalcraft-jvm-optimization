@@ -12,9 +12,16 @@ import (
 )
 
 type Info struct {
-	TotalRAM      uint64
-	FreeRAM       uint64
-	CPUCores      int
+	TotalRAM uint64
+	FreeRAM  uint64
+	// CPUCores is the number of physical cores reported by Windows.
+	// Used for hardware-class decisions (e.g. X3D big-cache bonus).
+	CPUCores int
+	// CPUThreads is the total number of logical threads the OS exposes
+	// (runtime.NumCPU). Differs from CPUCores×2 on CPUs without SMT/HT
+	// — for example Intel i5-9600KF is 6C/6T, not 6C/12T — which is
+	// why GC worker sizing uses this value instead of assuming 2-way SMT.
+	CPUThreads int
 	// L3CacheMB is the largest unified L3 cache reported by Windows. On
 	// multi-CCD CPUs (e.g. 5950X) this is the per-CCD size, not the sum,
 	// since a hot thread only benefits from its own CCD's cache.
@@ -56,8 +63,9 @@ type memoryStatusEx struct {
 // the caller can still size the JVM.
 func Detect() Info {
 	info := Info{
-		CPUCores:  physicalCores(),
-		L3CacheMB: detectL3CacheMB(),
+		CPUCores:   physicalCores(),
+		CPUThreads: runtime.NumCPU(),
+		L3CacheMB:  detectL3CacheMB(),
 	}
 
 	var ms memoryStatusEx
