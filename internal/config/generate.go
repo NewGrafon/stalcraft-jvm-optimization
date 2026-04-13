@@ -132,12 +132,19 @@ func sizeHeap(totalGB uint64) uint64 {
 	}
 }
 
-// gcThreads reserves two cores for game/render threads and caps parallel
-// workers at 10 — G1 scales poorly past that on consumer CPUs.
-// Concurrent workers are 1/4 of parallel so they don't starve the game.
+// gcThreads derives the STW and concurrent GC worker counts from the
+// physical core count, assuming 2-way SMT (every modern consumer CPU).
+//
+// Parallel workers only run during STW — the game thread is stopped
+// anyway, so HT siblings are free to do GC work without contention.
+// That's why we scale off total logical threads (cores × 2), not just
+// physical cores, and cap at 10 where G1 hits diminishing returns.
+//
+// Concurrent workers share CPU with the running game, so they stay
+// a bit more conservative: roughly half of parallel, floor 1, ceiling 4.
 func gcThreads(cores int) (parallel, concurrent int) {
-	parallel = clamp(cores-2, 2, 10)
-	concurrent = clamp(parallel/4, 1, 4)
+	parallel = clamp(cores*2-2, 2, 10)
+	concurrent = clamp(parallel/2, 1, 4)
 	return
 }
 
