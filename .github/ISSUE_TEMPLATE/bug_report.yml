@@ -98,18 +98,6 @@ body:
       required: true
 
   - type: textarea
-    id: jvm-log
-    attributes:
-      label: Содержимое `jvm_wrapper/logs/jvm.log`
-      description: |
-        Файл может быть большим — проще всего перетащить его мышкой прямо в это поле (drag-and-drop), GitHub сам приложит его к issue.
-
-        Если лог огромен и drag-and-drop не работает — выложите его в [Gist](https://gist.github.com) и оставьте ссылку.
-      render: shell
-    validations:
-      required: false
-
-  - type: textarea
     id: config
     attributes:
       label: Активный профиль конфигурации
