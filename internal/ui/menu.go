@@ -27,7 +27,7 @@ func Run() error {
 	}
 
 	for {
-		drawHeader(config.ActiveName())
+		drawHeader(config.ActiveName(), config.ActiveExists())
 
 		var exit bool
 		items := []item{
@@ -52,10 +52,17 @@ func Run() error {
 	}
 }
 
-func drawHeader(active string) {
+func drawHeader(active string, exists bool) {
 	fmt.Println("STALCRAFT JVM Optimization Wrapper")
 	fmt.Println("-----------------------------------")
-	fmt.Printf("Active config: %s\n\n", active)
+	if active == "" {
+		fmt.Println("Active config: (none — default.json will be used)")
+	} else if !exists {
+		fmt.Printf("Active config: %s  (missing — falls back to default)\n", active)
+	} else {
+		fmt.Printf("Active config: %s\n", active)
+	}
+	fmt.Println()
 	fmt.Println("RU: Стрелки для выбора, Enter для подтверждения.")
 	fmt.Println("EN: Arrow keys to select, Enter to confirm.")
 	fmt.Println()

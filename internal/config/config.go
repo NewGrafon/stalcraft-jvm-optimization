@@ -147,14 +147,41 @@ func Load(name string) (Config, error) {
 	return cfg, nil
 }
 
-// LoadActive reads the config currently selected in the registry,
-// falling back to "default" when no selection has been made.
-func LoadActive() (Config, error) {
+// LoadActive reads the config currently selected in the registry.
+// If the selection points at a name with no corresponding file on
+// disk (the user deleted their custom profile after selecting it),
+// or if no selection has been made at all, the function falls back
+// to "default" automatically. The returned name is the config that
+// was actually loaded — comparing it against ActiveName() lets the
+// caller detect that a fallback happened and warn the user.
+func LoadActive() (cfg Config, loadedName string, err error) {
+	requested := ActiveName()
+	if requested == "" {
+		requested = "default"
+	}
+	cfg, err = Load(requested)
+	if errors.Is(err, ErrNotFound) && requested != "default" {
+		// Selection refers to a profile that no longer exists.
+		// Try the default profile as a safety net.
+		if fallbackCfg, fallbackErr := Load("default"); fallbackErr == nil {
+			return fallbackCfg, "default", nil
+		}
+	}
+	return cfg, requested, err
+}
+
+// ActiveExists reports whether the currently selected active config
+// name has a corresponding file on disk. It returns false when no
+// selection has been made or when the selection has been deleted.
+// Callers can use it to surface a "missing, will fall back to default"
+// notice in the UI without having to actually load the config.
+func ActiveExists() bool {
 	name := ActiveName()
 	if name == "" {
-		name = "default"
+		return false
 	}
-	return Load(name)
+	_, err := os.Stat(filepath.Join(Dir(), name+".json"))
+	return err == nil
 }
 
 // List returns the names (without .json) of every config on disk.

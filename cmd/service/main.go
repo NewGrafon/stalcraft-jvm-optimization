@@ -60,16 +60,22 @@ func launch(exePath string, args []string) int {
 		fmt.Fprintf(os.Stderr, "[config] %v\n", err)
 	}
 
-	cfg, cfgErr := config.LoadActive()
+	cfg, loadedName, cfgErr := config.LoadActive()
 	switch {
 	case cfgErr != nil:
 		slog.Warn("config load failed, launcher args kept as-is", "err", cfgErr)
 	case cfg.HeapSizeGB == 0:
-		slog.Warn("config has zero heap, skipping flag injection", "name", config.ActiveName())
+		slog.Warn("config has zero heap, skipping flag injection", "name", loadedName)
 	default:
+		if requested := config.ActiveName(); requested != "" && requested != loadedName {
+			slog.Warn("active config missing, fell back to default",
+				"requested", requested,
+				"loaded", loadedName,
+			)
+		}
 		flags := jvm.Flags(cfg)
 		slog.Info("config loaded",
-			"name", config.ActiveName(),
+			"name", loadedName,
 			"heap_gb", cfg.HeapSizeGB,
 			"metaspace_mb", cfg.MetaspaceMB,
 			"parallel_gc", cfg.ParallelGCThreads,
