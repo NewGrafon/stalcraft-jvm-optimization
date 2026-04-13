@@ -147,15 +147,22 @@ func Flags(cfg config.Config, jvmLogPath string) []string {
 		flags = append(flags, fmt.Sprintf("-XX:CompileThresholdScaling=%g", cfg.CompileThresholdScaling))
 	}
 
-	// Unified logging (JEP 158, JDK 9+). Captures:
-	//   gc*            — young/mixed/full/concurrent/humongous/ergo
-	//   safepoint      — every STW event, GC and non-GC (deopt, class
-	//                    redefinition, thread dump, ForceSafepoint…)
-	//   jit+compilation — each method compiled by C1/C2
-	//   deoptimization — C2 backing out of optimized code (rare but
-	//                    each one is a microfreeze)
-	//   metaspace      — metaspace pressure / resize events
-	//   codecache      — code cache fill level changes
+	// Unified logging (JEP 158, JDK 9+). We deliberately enable only
+	// the two tag selectors that have existed since the first JEP 158
+	// implementation in OpenJDK 9:
+	//
+	//   gc*       — every GC-prefixed tag (gc, gc+heap, gc+phases,
+	//               gc+ergo, gc+humongous, …) — covers all GC events
+	//   safepoint — every STW pause, GC and non-GC alike (deopt,
+	//               class redefinition, thread dump, ForceSafepoint…)
+	//
+	// Tags like `jit+compilation`, `deoptimization`, `metaspace` and
+	// `codecache` are only available in JDK 11+. OpenJDK 9 does not
+	// silently ignore unknown tag selectors — it aborts JVM startup
+	// with "Could not create the Java Virtual Machine", which broke
+	// the wrapper for STALCRAFT users on the bundled JDK 9 runtime.
+	// The two tags above are enough to surface every STW microfreeze,
+	// which was the original goal of enabling JVM logging at all.
 	//
 	// The path is intentionally relative: -Xlog uses ':' as a section
 	// separator and a Windows absolute path "C:\..." collides with the
@@ -169,7 +176,7 @@ func Flags(cfg config.Config, jvmLogPath string) []string {
 			path = "logs/jvm.log"
 		}
 		flags = append(flags, fmt.Sprintf(
-			"-Xlog:gc*,safepoint,jit+compilation,deoptimization,metaspace,codecache:file=%s:time,uptime,level,tags:filecount=3,filesize=10M",
+			"-Xlog:gc*,safepoint:file=%s:time,uptime,level,tags:filecount=3,filesize=10M",
 			path,
 		))
 	}
