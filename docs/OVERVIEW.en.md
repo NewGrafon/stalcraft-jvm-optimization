@@ -22,10 +22,9 @@ When `stalcraft.exe` or `stalcraftw.exe` is launched, Windows starts `service.ex
 
 ## Logging
 
-Both binaries write structured logs into the `logs/` directory next to the executable:
+Both binaries write structured logs into `logs/wrapper.log` next to the executable: startup, hardware detection, config load, game process spawn, exit code. User profile paths are redacted, raw launcher arguments and JVM flags are never logged. The file is truncated once it exceeds 2 MB.
 
-- `logs/wrapper.log` — wrapper events: startup, hardware detection, config load, process start, exit code. User profile paths are redacted, raw launcher arguments and JVM flags are never logged. The file is truncated once it exceeds 2 MB.
-- `logs/jvm.log` — JDK 9+ unified logging: GC pauses, all STW safepoints, JIT compilation, deoptimization, metaspace and code cache events. Rotated into 3 files of 10 MB each. Use it to diagnose microfreezes.
+There is no separate JVM/GC log file — STALCRAFT bundles a custom OpenJDK 9 build whose CLI parsers for `-Xlog` and `-Xloggc` have been stripped, so unified logging cannot be directed to a file. `wrapper.log` is enough for the vast majority of support cases.
 
 ## CLI Interaction
 

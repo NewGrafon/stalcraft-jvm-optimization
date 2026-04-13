@@ -145,12 +145,9 @@ on configuration parameters.
 
 ### Logging
 
-Both binaries write structured logs into `jvm_wrapper/logs/` next to `cli.exe` and `service.exe`:
+The utility writes a single structured log file at `jvm_wrapper/logs/wrapper.log` next to `cli.exe` and `service.exe`. It records startup, hardware detection, config load, game process spawn and exit code. User profile paths are redacted to `<user>`, raw launcher arguments and JVM flags are **never written**. The file is truncated once it exceeds 2 MB.
 
-- **`logs/wrapper.log`** — wrapper events: startup, hardware detection, config load, game process spawn, exit code. User profile paths are redacted to `<user>`, raw launcher arguments and JVM flags are never written. The file is truncated once it exceeds 2 MB.
-- **`logs/jvm.log`** — [JDK 9 unified logging](https://openjdk.org/jeps/158): GC pauses, every STW safepoint, JIT compilation, deoptimization, metaspace and code cache events. 3 rotated files of 10 MB each, up to 30 MB on disk total. Used to diagnose the root cause of microfreezes.
-
-If you run into a problem and want to report it, attach both files from `jvm_wrapper/logs/` to your GitHub issue. They contain no personal information and are safe to publish.
+If you run into a problem and want to report it, attach this file to your GitHub issue. It contains no personal information and is safe to publish.
 
 ### Large Pages
 

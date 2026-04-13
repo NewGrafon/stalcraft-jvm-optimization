@@ -4,7 +4,7 @@ Configuration is fine-grained JVM tuning for your specific hardware. The auto-ge
 
 This document explains **why** each parameter exists and **which direction** to nudge it when hand-tuning. The exact numbers for your machine are sitting in `configs/default.json` after first launch — the defaults are already tailored to your hardware.
 
-> **Warning:** a misconfigured parameter often produces results **worse** than "leave it alone". If you don't have a concrete problem surfaced by `logs/jvm.log`, keep the auto-generated config. Every manual change should be deliberate.
+> **Warning:** a misconfigured parameter often produces results **worse** than "leave it alone". Without a clearly stated problem, keep the auto-generated config. Every manual change should be deliberate.
 
 ## Reference material
 
@@ -276,18 +276,6 @@ Roughly every 10 seconds the JVM decays JIT hotness counters (periodic counter d
 Multiplier on the C1→C2 promotion threshold. 1.0 is the default (~10,000 invocations before C2), 0.5 is twice as early (~5,000).
 
 **0.5 = faster warmup.** Methods hit their final C2 version sooner, the game reaches peak performance faster after loading. The downside is a tiny bit more CPU during warmup (first minute of play), but this is a one-off price for steadier gameplay.
-
----
-
-## Logging
-
-### `enable_jvm_log`
-
-Enables [JDK 9 unified logging](https://openjdk.org/jeps/158) for GC, safepoints, JIT compilation, deoptimization, metaspace and code cache events. Output lands in `logs/jvm.log` inside the game directory with 3 × 10 MB rotation (up to 30 MB on disk total).
-
-**`true` = on.** Overhead is below 0.1% (unified logging is non-blocking), and in exchange you can diagnose virtually any JVM-related freeze: `grep "stopped:" logs/jvm.log | awk '$NF > 0.015'` surfaces every STW pause longer than 15 ms with its reason. Without this log, the root cause of microfreezes is a guessing game.
-
-Turn off (`false`) only if your disk is extremely constrained and 30 MB matters.
 
 ---
 

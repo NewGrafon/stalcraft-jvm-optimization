@@ -41,6 +41,5 @@
   "use_thread_priorities": true,
   "thread_priority_policy": 1,
   "use_counter_decay": false,
-  "compile_threshold_scaling": 0.5,
-  "enable_jvm_log": true
+  "compile_threshold_scaling": 0.5
 }

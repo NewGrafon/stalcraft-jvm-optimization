@@ -111,7 +111,7 @@ This section covers the messages that appear inside the launcher window (EXBO, S
 
 1. Try **Regenerate Config** in the `cli.exe` menu — it rebuilds `default.json` for the current hardware, in case the old config is stale or no longer matches a PC upgrade.
 2. If that helped — keep playing, the problem is solved.
-3. If it didn't help — temporarily remove the wrapper (`cli.exe` → `Uninstall`) and play without it. If the crashes go away without the wrapper, the problem is compatibility with your hardware or Windows build — open an issue on GitHub and attach `jvm_wrapper/logs/wrapper.log` and `logs/jvm.log`.
+3. If it didn't help — temporarily remove the wrapper (`cli.exe` → `Uninstall`) and play without it. If the crashes go away without the wrapper, the problem is compatibility with your hardware or Windows build — open an issue on GitHub and attach `jvm_wrapper/logs/wrapper.log`.
 4. If the crashes persist without the wrapper, the wrapper isn't the cause — it's the game itself, your drivers, or the hardware.
 
 ---
