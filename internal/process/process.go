@@ -139,6 +139,26 @@ func extractGameDir(exePath string, args []string) string {
 	return ""
 }
 
+// WorkDir returns the absolute working directory that Start would use
+// for the spawned game process: an explicit --gameDir / -Djava.library.path
+// value when present, or the directory containing the target executable
+// as a fallback. Exposed so the wrapper can resolve other paths
+// (such as the JVM unified-log file) relative to it before launch.
+func WorkDir(exePath string, args []string) string {
+	abs, err := filepath.Abs(exePath)
+	if err != nil {
+		abs = exePath
+	}
+	dir := extractGameDir(abs, args)
+	if dir == "" {
+		dir = filepath.Dir(abs)
+	}
+	if absDir, err := filepath.Abs(dir); err == nil {
+		return absDir
+	}
+	return dir
+}
+
 // Start spawns exePath with args via NtCreateUserProcess.
 // The resulting Process must be closed by the caller.
 func Start(exePath string, args []string) (*Process, error) {
@@ -149,14 +169,7 @@ func Start(exePath string, args []string) (*Process, error) {
 	ntPath := `\??\` + absPath
 	cmdLine := buildCmdLine(absPath, args)
 
-	workDir := extractGameDir(absPath, args)
-	if workDir == "" {
-		workDir = filepath.Dir(absPath)
-	}
-	workDir, err = filepath.Abs(workDir)
-	if err != nil {
-		return nil, fmt.Errorf("resolve workdir %q: %w", workDir, err)
-	}
+	workDir := WorkDir(exePath, args)
 
 	imgUS, imgBuf, err := newUnicodeString(absPath)
 	if err != nil {

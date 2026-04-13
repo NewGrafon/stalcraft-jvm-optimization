@@ -10,7 +10,14 @@ import (
 )
 
 // Flags renders the tuning profile as a list of -X / -XX: flags.
-func Flags(cfg config.Config) []string {
+//
+// jvmLogPath is the path passed to -Xlog file= when EnableJVMLog is set.
+// It is interpreted by the JVM relative to its working directory (the
+// game directory), so the caller is responsible for computing whatever
+// relative path lands the file where the wrapper wants it. An empty
+// string falls back to the default "logs/jvm.log" sibling of the game
+// working directory.
+func Flags(cfg config.Config, jvmLogPath string) []string {
 	cc := cfg.ReservedCodeCacheSizeMB
 	if cc == 0 {
 		cc = 256
@@ -149,13 +156,22 @@ func Flags(cfg config.Config) []string {
 	//                    each one is a microfreeze)
 	//   metaspace      — metaspace pressure / resize events
 	//   codecache      — code cache fill level changes
-	// Path is relative to the game's working directory because -Xlog
-	// uses ':' as a separator and a Windows absolute path "C:\..."
-	// collides with the parser. Overhead is below 0.1%.
+	//
+	// The path is intentionally relative: -Xlog uses ':' as a section
+	// separator and a Windows absolute path "C:\..." collides with the
+	// parser. The caller computes a relative path from the game's
+	// working directory to wherever it wants the log to land (typically
+	// jvm_wrapper/logs/jvm.log via filepath.Rel) and passes it in.
+	// Overhead of unified logging itself is below 0.1 %.
 	if cfg.EnableJVMLog {
-		flags = append(flags,
-			"-Xlog:gc*,safepoint,jit+compilation,deoptimization,metaspace,codecache:file=logs/jvm.log:time,uptime,level,tags:filecount=3,filesize=10M",
-		)
+		path := jvmLogPath
+		if path == "" {
+			path = "logs/jvm.log"
+		}
+		flags = append(flags, fmt.Sprintf(
+			"-Xlog:gc*,safepoint,jit+compilation,deoptimization,metaspace,codecache:file=%s:time,uptime,level,tags:filecount=3,filesize=10M",
+			path,
+		))
 	}
 
 	return flags
