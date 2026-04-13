@@ -18,11 +18,18 @@ func Generate(sys sysinfo.Info) Config {
 	parallel, concurrent := gcThreads(sys.CPUCores)
 	jit := jitProfile(sys)
 	ihop := 20
+	// 40 ms is a realistic target on consumer CPUs with DDR4 / DDR5
+	// without V-Cache — setting it much lower just forces G1 to slice
+	// young GC into smaller, more frequent pauses and hurts throughput
+	// without actually reaching the target.
+	pauseMs := 40
 	if sys.HasBigCache() {
 		// On X3D-class CPUs we can start concurrent marking earlier —
 		// memory bandwidth headroom is effectively free, and earlier
-		// marking reduces the risk of mixed-GC pressure.
+		// marking reduces the risk of mixed-GC pressure. The huge L3
+		// also lets G1 realistically hit a tighter pause target.
 		ihop = 15
+		pauseMs = 25
 		if sys.CPUCores >= 8 {
 			concurrent++
 		}
@@ -33,7 +40,7 @@ func Generate(sys sysinfo.Info) Config {
 		PreTouch:    sys.TotalGB() >= 12,
 		MetaspaceMB: 512,
 
-		MaxGCPauseMillis:               35,
+		MaxGCPauseMillis:               pauseMs,
 		G1HeapRegionSizeMB:             regionSize(heap),
 		G1NewSizePercent:               30,
 		G1MaxNewSizePercent:            50,
@@ -150,17 +157,18 @@ func gcThreads(cores int) (parallel, concurrent int) {
 
 // regionSize matches G1 region granularity to heap size. JVM only
 // accepts powers of two between 1 and 32 MB; larger regions mean fewer
-// RSet scans, smaller regions mean finer mixed-GC control.
+// RSet scans, smaller regions mean finer mixed-GC control. sizeHeap
+// caps heap at 8 GB, so 16 MB is the upper choice in practice —
+// 32 MB regions would leave only 256 regions at 8 GB heap, hurting
+// mixed-GC selection granularity.
 func regionSize(heapGB uint64) int {
 	switch {
 	case heapGB <= 3:
 		return 4
 	case heapGB <= 5:
 		return 8
-	case heapGB <= 7:
-		return 16
 	default:
-		return 32
+		return 16
 	}
 }
 
